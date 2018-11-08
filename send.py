@@ -12,7 +12,7 @@ def transfer(address, tag, message, value):
     prepared_transferes = []
     api = Iota(NODE_URL, SEED)
 
-    sender_tag = bytes(sender_tag)
+    sender_tag = sender_tag
     transfer_value = int(value)
 
     txn = \
@@ -34,10 +34,10 @@ def transfer(address, tag, message, value):
             min_weight_magnitude=MIN_WEIGHT_MAGNITUDE
         )
     except:
-        print "Exception on TangleID transaction agent."
+        print("Exception on TangleID transaction agent.")
         return "Exception on TangleID transaction agent."
 
-    print str(bundle_hash['bundle'].hash)
+    print(bundle_hash['bundle'].hash)
     return str(bundle_hash['bundle'].hash)
 
-transfer("ILXW9VMJQVFQVKVE9GUZSODEMIMGOJIJNFAX9PPJHYQPUHZLTWCJZKZKCZYKKJJRAKFCCNJN9EWOW9N9YDGZDDQDDC", "TAG", "message", 0)
+transfer("ILXW9VMJQVFQVKVE9GUZSODEMIMGOJIJNFAX9PPJHYQPUHZLTWCJZKZKCZYKKJJRAKFCCNJN9EWOW9N9YDGZDDQDDC", "TAG", "MSG", 0)
