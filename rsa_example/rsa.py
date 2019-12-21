@@ -1,11 +1,14 @@
 import M2Crypto
 import M2Crypto.BN as BN
+import base64, hashlib
 
 def generate_keypair_as_pem(key_len, exponent):
     def empty_callback():
         pass
 
+    # 產生 key len 和質數
     rsa = M2Crypto.RSA.gen_key(key_len, exponent, empty_callback)
+    
     # Get RSA Public Key in PEM format
     buf = M2Crypto.BIO.MemoryBuffer('')
     rsa.save_pub_key_bio(buf)
@@ -24,16 +27,24 @@ def get_data_digest(data):
     digest =  msg_digest.digest()
     return digest
 
+# 產生密文，簽章
 def generate_secure_msg(A_private_key, B_public_key, message):
+    # pkcs1_oaep_padding 密文型態
     padding = M2Crypto.RSA.pkcs1_oaep_padding
+
+    # Write B pub key to buffer
     buf = M2Crypto.BIO.MemoryBuffer('')
     buf.write(B_public_key)
+    
+    # 加密
     rsa1 = M2Crypto.RSA.load_pub_key_bio(buf)
     cipher_message = rsa1.public_encrypt(message, padding)
+
     # Use A's private key to sign the 'cipher_message'
     digest1 = get_data_digest(cipher_message)
     rsa2 = M2Crypto.RSA.load_key_string(A_private_key)
     signature = rsa2.sign(digest1, 'sha256')
+    
     return cipher_message, signature
 
 def read_secure_msg(A_public_key, B_private_key, cipher_message, signature):
@@ -42,13 +53,16 @@ def read_secure_msg(A_public_key, B_private_key, cipher_message, signature):
         buf = M2Crypto.BIO.MemoryBuffer('')
         buf.write(A_public_key)
         rsa3 = M2Crypto.RSA.load_pub_key_bio(buf)                
+        
         # Verify
         digest2 = get_data_digest(cipher_message)
         rsa3.verify(digest2, signature, 'sha256')
+        
         # Use B's private key to decrypt 'cipher_message'
         rsa4 = M2Crypto.RSA.load_key_string(B_private_key)        
         padding = M2Crypto.RSA.pkcs1_oaep_padding
         plaintext_message = rsa4.private_decrypt(cipher_message, padding)
+        
         return plaintext_message
     except Exception as err:        
         print 'Verify Fail:%r'% err
@@ -70,6 +84,9 @@ if __name__ == '__main__':
 
     # Sender's behavior
     cipher_msg, signature = generate_secure_msg(A_priv_key, B_pub_key, msg)
+    print(base64.b64encode(cipher_msg))
+    print(base64.b64encode(signature))
 
     # Receiver's behavior
     plain_text = read_secure_msg(A_pub_key, B_priv_key, cipher_msg, signature)
+    print(plain_text)
